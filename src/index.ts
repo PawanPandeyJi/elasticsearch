@@ -3,9 +3,11 @@ import dotenv from "dotenv";
 dotenv.config();
 import {sequelize} from "./config/database";
 import { checkConnection } from "./config/elasticsearch";
+import { elasticSearchRouter } from "./routers/elasticsearch.router";
 
 const app = express();
 
+app.use(elasticSearchRouter)
 
 checkConnection();
 

@@ -1,4 +1,4 @@
-import { Model, DataType, DataTypes } from "sequelize";
+import { Model, DataTypes } from "sequelize";
 import { sequelize } from "../config/database";
 import { client } from "../config/elasticsearch";
 
@@ -6,7 +6,7 @@ export type BookAttribute = {
   id: string;
   title: string;
   author: string;
-  year: number;
+  year: string;
   createdAt?: Date;
   updatedAt?: Date;
 };
@@ -20,7 +20,7 @@ export class Book
   public id!: string;
   public title!: string;
   public author!: string;
-  public year!: number;
+  public year!: string;
 
   public readonly createAt!: Date;
   public readonly updatedAt!: Date;
@@ -45,7 +45,7 @@ Book.init(
     },
 
     year: {
-      type: DataTypes.NUMBER,
+      type: DataTypes.STRING,
       allowNull: false,
     },
   },
@@ -56,21 +56,19 @@ Book.init(
   }
 );
 
-
-
 Book.afterCreate(async (book) => {
-    await client.index({
-      index: "books_index",
-      id: book.id.toString(),
-      body: book.toJSON(),
-    });
-    console.log(`📌 Book [${book.id}] added to Elasticsearch`);
+  await client.index({
+    index: "books_index",
+    id: book.id.toString(),
+    body: book.toJSON(),
   });
-  
-  Book.afterDestroy(async (book) => {
-    await client.delete({
-      index: "books_index",
-      id: book.id.toString(),
-    });
-    console.log(`📌 Book [${book.id}] removed from Elasticsearch`);
+  console.log(`📌 Book [${book.id}] added to Elasticsearch`);
+});
+
+Book.afterDestroy(async (book) => {
+  await client.delete({
+    index: "books_index",
+    id: book.id.toString(),
   });
+  console.log(`📌 Book [${book.id}] removed from Elasticsearch`);
+});

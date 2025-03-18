@@ -1,4 +1,5 @@
 import express from "express";
+import { createIndex } from "../controllers/elasticsearch.controller";
 
 export const elasticSearchRouter = express.Router()
 

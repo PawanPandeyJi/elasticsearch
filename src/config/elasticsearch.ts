@@ -10,7 +10,7 @@ if (
   throw new Error("One or more required environment veriables are missing!!");
 }
 
-const client = new Client({
+export const client = new Client({
   node: process.env.ES_NODE_URL,
   auth: {
     username: process.env.ES_USERNAME,

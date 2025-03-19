@@ -65,6 +65,16 @@ Book.afterCreate(async (book) => {
   console.log(`📌 Book [${book.id}] added to Elasticsearch`);
 });
 
+Book.afterBulkCreate(async (books) => {
+  for (const book of books) {
+    await client.index({
+      index: "books_index",
+      id: book.id.toString(),
+      body: book.toJSON(),
+    });
+    console.log(`📌 Book [${book.id}] added to Elasticsearch`);
+  }
+});
 Book.afterDestroy(async (book) => {
   await client.delete({
     index: "books_index",

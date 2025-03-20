@@ -14,7 +14,7 @@ export const createIndex = async (
       return;
     }
     const response = await client.indices.create({
-      index: "books_index",
+      index: "books_index", 
     });
     res.json(response);
   } catch (error) {
@@ -22,3 +22,4 @@ export const createIndex = async (
     res.status(500).json({ createIndex_controller: error });
   }
 };
+

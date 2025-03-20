@@ -57,13 +57,15 @@ Book.init(
 );
 
 Book.afterCreate(async (book) => {
-  await client.index({
+  const es_response = await client.index({
     index: "books_index",
     id: book.id.toString(),
     body: book.toJSON(),
   });
-  console.log(`📌 Book [${book.id}] added to Elasticsearch`);
+  console.log(`📌 Book [${book.id}] added to Elasticsearch`, es_response);
+  console.log(`🔎 Full Elasticsearch Response:`, JSON.stringify(es_response, null, 2));
 });
+
 
 Book.afterBulkCreate(async (books) => {
   for (const book of books) {

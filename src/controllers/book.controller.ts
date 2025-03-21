@@ -1,5 +1,7 @@
 import { Request, Response } from "express";
 import { Book, BookAttribute } from "../models/book.model";
+import { performance } from "perf_hooks";
+import { client } from "../config/elasticsearch";
 
 export const addBook = async (
   req: Request<Record<string, string>, void, BookAttribute | BookAttribute[]>,
@@ -17,20 +19,56 @@ export const addBook = async (
       }
 
       const newBooks = await Book.bulkCreate(data);
-      res.status(201).json(newBooks);
+
+      const start = performance.now();
+
+      const esBody = newBooks.flatMap((book) => [
+        { index: { _index: "books_index", _id: book.id.toString() } },
+        book.toJSON(),
+      ]);
+      await client.bulk({ refresh: true, body: esBody });
+
+      const end = performance.now();
+      const elapsedTime = (end - start).toFixed(2);
+
+      res.status(201).json({
+        message: `${newBooks.length} books added successfully!`,
+        books: newBooks,
+        es_sync_time_ms: elapsedTime,
+      });
       return;
     }
 
-    const { title, author, year } = data;
+    const { title, author, year } = data as BookAttribute;
     if (!title || !author || !year) {
       res.status(400).json({ error: "All fields are required!" });
       return;
     }
 
     const newBook = await Book.create({ title, author, year });
-    res.status(201).json(newBook);
+
+    const start = performance.now();
+
+    await client.index({
+      index: "books_index",
+      id: newBook.id.toString(),
+      body: newBook.toJSON(),
+    });
+
+    await client.indices.refresh({ index: "books_index" });
+
+    const end = performance.now();
+    const elapsedTime = (end - start).toFixed(2);
+
+    res.status(201).json({
+      message: "Book added successfully!",
+      book: newBook,
+      es_sync_time_ms: elapsedTime,
+    });
+    return;
   } catch (error) {
-    res.status(500).json({ addBook_controller: error });
+    res.status(500).json({ error: "Failed to add book(s)", details: error });
+    return;
   }
 };
 
@@ -45,13 +83,34 @@ export const getBooks = async (req: Request, res: Response) => {
 
 export const deleteBooks = async (req: Request, res: Response) => {
   try {
-    const id = req.params.id;
+    const { id } = req.params;
     const book = await Book.findByPk(id);
-    if (book) {
-      await book.destroy();
+
+    if (!book) {
+       res.status(404).json({ error: "Book not found" });
+       return
     }
-    res.status(200).json(book);
+
+    const start = performance.now();
+
+    await book.destroy();
+
+    await client.delete({
+      index: "books_index",
+      id: id,
+    });
+
+    await client.indices.refresh({ index: "books_index" });
+
+    const end = performance.now();
+    const elapsedTime = (end - start).toFixed(2);
+
+     res.status(200).json({
+      message: `Book [${id}] deleted successfully!`,
+      es_sync_time_ms: elapsedTime,
+    });
+    return
   } catch (error) {
-    res.status(500).json({ deleteBooks_controllers: error });
+     res.status(500).json({ error: "Failed to delete book", details: error });
   }
 };

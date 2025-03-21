@@ -30,7 +30,6 @@ export const addBook = async (
     const newBook = await Book.create({ title, author, year });
     res.status(201).json(newBook);
   } catch (error) {
-    console.error("addBook", error);
     res.status(500).json({ addBook_controller: error });
   }
 };
@@ -40,7 +39,19 @@ export const getBooks = async (req: Request, res: Response) => {
     const books = await Book.findAll();
     res.status(200).json(books);
   } catch (error) {
-    console.error("addBook", error);
-    res.status(500).json({ getBooks_contrllers: error });
+    res.status(500).json({ getBooks_controllers: error });
+  }
+};
+
+export const deleteBooks = async (req: Request, res: Response) => {
+  try {
+    const id = req.params.id;
+    const book = await Book.findByPk(id);
+    if (book) {
+      await book.destroy();
+    }
+    res.status(200).json(book);
+  } catch (error) {
+    res.status(500).json({ deleteBooks_controllers: error });
   }
 };

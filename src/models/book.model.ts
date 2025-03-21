@@ -57,30 +57,41 @@ Book.init(
 );
 
 Book.afterCreate(async (book) => {
-  const es_response = await client.index({
-    index: "books_index",
-    id: book.id.toString(),
-    body: book.toJSON(),
-  });
-  console.log(`📌 Book [${book.id}] added to Elasticsearch`, es_response);
-  console.log(`🔎 Full Elasticsearch Response:`, JSON.stringify(es_response, null, 2));
-});
-
-
-Book.afterBulkCreate(async (books) => {
-  for (const book of books) {
-    await client.index({
+  try {
+    const es_response = await client.index({
       index: "books_index",
       id: book.id.toString(),
       body: book.toJSON(),
     });
-    console.log(`📌 Book [${book.id}] added to Elasticsearch`);
+    console.log(`📌 Book [${book.id}] added to Elasticsearch`, es_response);
+  } catch (error) {
+    console.error("❌ Error indexing book in Elasticsearch:", error);
   }
 });
+
+Book.afterBulkCreate(async (books) => {
+  try {
+    for (const book of books) {
+      const es_response = await client.index({
+        index: "books_index",
+        id: book.id.toString(),
+        body: book.toJSON(),
+      });
+      console.log(`📌 Book [${book.id}] added to Elasticsearch bulk`,es_response);
+    }
+  } catch (error) {
+    console.error("❌ Error indexing book in Elasticsearch bulk:", error);
+  }
+});
+
 Book.afterDestroy(async (book) => {
-  await client.delete({
-    index: "books_index",
-    id: book.id.toString(),
-  });
-  console.log(`📌 Book [${book.id}] removed from Elasticsearch`);
+  try {
+    const es_response = await client.delete({
+      index: "books_index",
+      id: book.id.toString(),
+    });
+    console.log(`✅ Book [${book.id}] removed from Elasticsearch`, es_response);
+  } catch (error) {
+    console.error("❌ Error removing book from Elasticsearch:", error);
+  }
 });

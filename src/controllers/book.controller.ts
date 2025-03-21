@@ -26,7 +26,7 @@ export const addBook = async (
         { index: { _index: "books_index", _id: book.id.toString() } },
         book.toJSON(),
       ]);
-      await client.bulk({ refresh: true, body: esBody });
+      const es_response = await client.bulk({ refresh: true, body: esBody });
 
       const end = performance.now();
       const elapsedTime = (end - start).toFixed(2);
@@ -34,6 +34,7 @@ export const addBook = async (
       res.status(201).json({
         message: `${newBooks.length} books added successfully!`,
         books: newBooks,
+        es_response: es_response.took,
         es_sync_time_ms: elapsedTime,
       });
       return;

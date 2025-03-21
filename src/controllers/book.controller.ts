@@ -34,7 +34,6 @@ export const addBook = async (
       res.status(201).json({
         message: `${newBooks.length} books added successfully!`,
         books: newBooks,
-        es_response: es_response.took,
         es_sync_time_ms: elapsedTime,
       });
       return;

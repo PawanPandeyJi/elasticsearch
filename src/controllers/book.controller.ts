@@ -87,8 +87,8 @@ export const deleteBooks = async (req: Request, res: Response) => {
     const book = await Book.findByPk(id);
 
     if (!book) {
-       res.status(404).json({ error: "Book not found" });
-       return
+      res.status(404).json({ error: "Book not found" });
+      return;
     }
 
     const start = performance.now();
@@ -105,12 +105,50 @@ export const deleteBooks = async (req: Request, res: Response) => {
     const end = performance.now();
     const elapsedTime = (end - start).toFixed(2);
 
-     res.status(200).json({
+    res.status(200).json({
       message: `Book [${id}] deleted successfully!`,
       es_sync_time_ms: elapsedTime,
     });
-    return
+    return;
   } catch (error) {
-     res.status(500).json({ error: "Failed to delete book", details: error });
+    res.status(500).json({ error: "Failed to delete book", details: error });
+  }
+};
+
+export const updateBooks = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const data = req.body;
+    const book = await Book.findByPk(id);
+
+    if (!book) {
+      res.status(404).json({ error: "Book not found" });
+      return;
+    }
+
+    await book.update(data);
+
+    const start = performance.now();
+
+    await client.index({
+      index: "books_index",
+      id: id,
+      body: { ...book.toJSON() },
+    });
+
+    await client.indices.refresh({ index: "books_index" });
+
+    const end = performance.now();
+    const elapsedTime = (end - start).toFixed(2);
+
+    res.status(200).json({
+      message: `Book [${id}] updated successfully!`,
+      es_sync_time_ms: elapsedTime,
+      updatedBook: book,
+    });
+    return;
+  } catch (error) {
+    res.status(500).json({ error: "Failed to update book", details: error });
+    return;
   }
 };
